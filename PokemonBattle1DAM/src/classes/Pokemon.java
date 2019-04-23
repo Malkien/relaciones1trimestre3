@@ -46,6 +46,22 @@ public class Pokemon extends LivingBeing {
         this.id=id;
     }
 
+    public String getSpecies() {
+        return species;
+    }
+
+    public void setSpecies(String species) {
+        this.species = species;
+    }
+
+    public int getExperiencePoints() {
+        return experiencePoints;
+    }
+
+    public void setExperiencePoints(int experiencePoints) {
+        this.experiencePoints = experiencePoints;
+    }
+
     public PokemonType getType() {
         return type;
     }
@@ -77,7 +93,22 @@ public class Pokemon extends LivingBeing {
     public int getId() {
         return id;
     }
+    public String print(){
+        String genero;
+        if(getGenre()=='m'){
+            genero="Male";
+        }else{
+            genero="Female";
+        }
+        return "\n\tName: "+getName()
+                + "\n\tGenre: "+genero
+                + "\n\tDescription: "+getDescription()
+                + "\n\tType: "+getType()
+                + "\n\tLife Points: "+getLifePoints()
+                + "\n\tSpecies: "+getSpecies()
+                + "\n\tLevel: "+getLevel()
+                + "\n\tId: "+getId();
+    }
     
     
-    
-            }
+}

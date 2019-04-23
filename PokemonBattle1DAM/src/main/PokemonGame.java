@@ -56,7 +56,8 @@ public class PokemonGame {
         do{
             if(user!=null){
                     menu="\n\nHello, "+user.getName()+". Choose action by number:"
-                +"\n\t0 - Exit game";
+                            +"\n\t0 - Exit game"
+                            +"\n\t1 - Show Pokemon";
                     if(user.getPokemon()==null){
                         menu+="\n\t1 - Register new pokemon";
                     }else{
@@ -74,8 +75,12 @@ public class PokemonGame {
                     if(user==null){
                         user=registerUser(sc,connection);
                     }else{
-                        System.out.println("Let's register your pokemon!");
-                        registerPokemon(sc,connection,user);
+                        if(user.getPokemon()==null){
+                            System.out.println("Let's register your pokemon!");
+                            registerPokemon(sc,connection,user);
+                        }else{
+                            System.out.println(user.getPokemon().print());
+                        }
                     }
                     break;
                 case 2:
@@ -220,14 +225,52 @@ public class PokemonGame {
             PreparedStatement idStatement=conn.prepareStatement("select pokemonId from pokemonUser where user= ?");
             idStatement.setString(1, username);
             ResultSet foundId=idStatement.executeQuery();
+            foundId.next();
             //8 - Create or reuse a Statement to query all pokemon data for the recovered id
             // (select * from pokemon where id= ?)
             PreparedStatement PokemonStatement=conn.prepareStatement("select * from pokemon where id= ?");
             PokemonStatement.setInt(1, foundId.getInt("pokemonId"));
-            ResultSet foundPokemon=idStatement.executeQuery();
+            ResultSet foundPokemon=PokemonStatement.executeQuery();
+            
             if(foundUser.next()){ //User is found
-                  System.out.println("Login succesful!");            
-                    //we get our recovered user and put it into a Java Object
+                System.out.println("Login succesful!");            
+                  //we get our recovered user and put it into a Java Object
+                boolean tienePokemon=true;
+                Pokemon pokemonActual=null;
+                if(foundPokemon.next()){
+                    //Pokemon pokemonActual=new Pokemon(name, genre, desc,type, (short)100, species,id);
+                    PokemonType type;
+                    switch(foundPokemon.getString("type").toUpperCase()){
+                            case "FIRE":
+                                type=FIRE;
+                            break;
+                            case "WATER":
+                                type=WATER;
+                            break;
+                            case "PLANT":
+                                type=PLANT;
+                            break;
+                            default:
+                                throw new Exception("Error on type");
+
+                        }
+                    char genrePokemon;
+                    if(foundPokemon.getInt("genre")==0){
+                        genrePokemon='f';
+                    }else{
+                        genrePokemon='m';
+                    }
+                    pokemonActual=new Pokemon(foundPokemon.getString("name"),
+                            genrePokemon,
+                            foundPokemon.getString("description"),
+                            type,
+                            foundPokemon.getShort("lifePoints"),
+                            foundPokemon.getString("species"),
+                            foundPokemon.getInt("id")
+                    );
+                }else{
+                    tienePokemon=false;
+                }
                 AccessLevel al=null;
                 if(foundUser.getString("accessLevel")
                         .equals("BASIC")){
@@ -242,9 +285,9 @@ public class PokemonGame {
                 foundUser.getString("genre").charAt(0),
                 foundUser.getString("description"),
                 foundUser.getString("password"),
-                al,null);
+                al,pokemonActual);
                 foundUser.close();
-                System.out.println("Hello, "+actual.getName()+", login successful!");
+                System.out.println("Hello, "+username+", login successful!");
                //TODO : Move actual upwards to main to be able to keep session track
                //Then add the 3 - Add pokemon 4 - Battle 5 - See Stats functions 6- Cure Pokemon
                //to the menu only when logged in
@@ -265,6 +308,8 @@ public class PokemonGame {
             System.err.println("Holy Shit! This should have never happened!");
             //We use an assert because this is a theoretically impossible situation
             assert true: "Holy Shit! This should have never happened!";
+        } catch (Exception ex) {
+            Logger.getLogger(PokemonGame.class.getName()).log(Level.SEVERE, null, ex);
         }
         //If login is incorrect, return null user
         return null;
