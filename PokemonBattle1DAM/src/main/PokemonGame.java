@@ -95,6 +95,7 @@ public class PokemonGame {
                 repeat=false;
             
                 try{
+                    //1 - Ask for all of pokemon data via Scanner
                     System.out.println("Write the name");
                     String name=sc.nextLine();
                     System.out.println("What genre it is?");
@@ -128,19 +129,21 @@ public class PokemonGame {
                     }
                     System.out.println("Write the species");
                     String species=sc.nextLine();
+                    //2 - Create an statement object and insert into pokemon table. (you can skip id , as it is auto-incremented)
                     Statement registerStatement=conn.createStatement();
-                    try{
-                        registerStatement.executeUpdate(
-                            "insert into pokemon (name, genre, description, type, species, level, lifePoints, xp)"
-                                    + "values ('"+name+"',"+(int)genreBoolean+",'"+desc+"','"+typeInit+"','"+species+"',1,100,0)");
-                    }catch(Exception ex){
-                        System.err.println("Error al introducir los datos de la BBDD");
-                    }
+                    registerStatement.executeUpdate(
+                        "insert into pokemon (name, genre, description, type, species, level, lifePoints, xp)"
+                                + "values ('"+name+"',"+(int)genreBoolean+",'"+desc+"','"+typeInit+"','"+species+"',1,100,0)");
+                    
+                    //3 - Query the newly created pokemon id (query max id from pokemon table)
                     ResultSet idBBDD=registerStatement.executeQuery("select MAX(id) FROM pokemon");
                     idBBDD.next();
                     int id=idBBDD.getInt("max(id)");
+                    //4 - Create a java Pokemon object with the read data and the queried id
                     Pokemon pokemonActual=new Pokemon(name, genre, desc,type, (short)100, species,id);
+                    //5 - User setPokemon in User class to Link the pokemon to the user in java
                     user.setPokemon(pokemonActual);
+                    //6 - Reuse Statement or create a new one to insert into pokemonUser table, where you link pokemon and user.
                     registerStatement.executeUpdate("insert into pokemonUser(user,pokemonId) values('"+user.getName()+"','"+pokemonActual.getId()+"') ");
                     registerStatement.close();
                 }catch(Exception ex){
@@ -206,13 +209,22 @@ public class PokemonGame {
             //array is used to give values to the wildcards as they
             //appear (position 0 replaces the first ? , position 1 replaces
             //the second ? and so on...
+            
             PreparedStatement loginStatement=
                     conn.prepareStatement("select * from user "
                             + "where name=? and password=? ");
             loginStatement.setString(1, username);
             loginStatement.setString(2, password);
             ResultSet foundUser=loginStatement.executeQuery();
-
+            //7 - Create or reuse a Statement to query the pokemon linked to the user
+            PreparedStatement idStatement=conn.prepareStatement("select pokemonId from pokemonUser where user= ?");
+            idStatement.setString(1, username);
+            ResultSet foundId=idStatement.executeQuery();
+            //8 - Create or reuse a Statement to query all pokemon data for the recovered id
+            // (select * from pokemon where id= ?)
+            PreparedStatement PokemonStatement=conn.prepareStatement("select * from pokemon where id= ?");
+            PokemonStatement.setInt(1, foundId.getInt("pokemonId"));
+            ResultSet foundPokemon=idStatement.executeQuery();
             if(foundUser.next()){ //User is found
                   System.out.println("Login succesful!");            
                     //we get our recovered user and put it into a Java Object
